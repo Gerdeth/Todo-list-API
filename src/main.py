@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Task
+from models import db,User, Task
 #from models import Person
 
 app = Flask(__name__)
@@ -42,7 +42,6 @@ def handle_hello():
 @app.route('/todos/<username>', methods=['GET'])
 def get_todos(username):
     tasks = Task.get_task_by_username(username)
-    # return results, jsonify() on results, status
     return jsonify({
         "message":f"These are the tasks available for user {username}",
         "task":tasks
@@ -51,15 +50,31 @@ def get_todos(username):
 
 @app.route('/todos/<username>', methods=['POST'])
 def create_todos(username):
-    pass
+    request_data= request.get_json()
+    task=Task(request_data["label"],request_data["done"],username)
+    task.save_to_data()
+    return jsonify({"Message":"Task created" })
 
-@app.route('/todos/<username>', methods=['PUT'])
-def update_todos(username):
-    pass
+@app.route('/todos/<id>', methods=['PUT'])
+def update_todos(id):
+    task= Task.get_task_by_id(int(id))
+    request_data=request.get_json()
+    task.label=request_data["label"]
+    task.done=request_data["done"]
+    task.save_to_data()
+    return jsonify({
+        "Message":"Task updated",
+        "Task_updater":task.serialize()
+    })
 
-@app.route('/todos/<username>', methods=['DELETE'])
-def delete_todos(username):
-    pass
+@app.route('/todos/<id>', methods=['DELETE'])
+def delete_todos(id):
+    task=Task.get_task_by_id(int(id))
+    if task is None: 
+        raise APIException("Id not found ", 404)
+    task.delete_from_database()
+    return jsonify({"Message":"Task deleted"})
+
 
 
 
